@@ -4,7 +4,6 @@ module Main where
 
 import Control.Monad
 import System.Environment
-import System.Exit
 
 main :: IO ()
 main = do
