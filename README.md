@@ -10,8 +10,10 @@ We will also use [Atom](https://atom.io/) as an IDE with some Haskell-related pl
 
 
 #### Installing `stack`
+- Create `~/.local/bin` and add it to your `PATH`.
 - Install [stack](https://docs.haskellstack.org/en/stable/README/): 
   `curl -sSL https://get.haskellstack.org/ | sh` or `brew install haskell-stack`
+- Watch if there were any warnings about `PATH`
 - [Optional] Run `stack setup` and `stack ghci` to verify that you can run Haskell on your machine.
 
 #### Installing `Atom`
