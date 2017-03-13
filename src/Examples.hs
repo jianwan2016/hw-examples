@@ -1,4 +1,5 @@
 -- This is a comment.
+
 {- This
    is
    a
@@ -10,9 +11,15 @@
 -- By default this will export everything in the module
 -- (i.e. make it available to other modules)
 module Examples where
-
 -- If we wanted to limit what we export, we could use:
 -- module Examples (things, we, want, to, export) where
+
+-- This is an import. `Prelude` is the name of the standard library in Haskell.
+-- This is also imported automatically, but we're going to be overwriting some
+-- of its entries, so we need a reference to it with a name ("P").
+-- There are a bunch of different "import" syntaxes that you can find here:
+-- https://wiki.haskell.org/Import
+import Prelude as P
 
 -- This is a constant named "three", with value `3`
 -- Identifiers for values and functions in Haskell follow the usual
@@ -37,7 +44,7 @@ false :: Bool
 false = False
 
 -- Fixed size signed integer.
--- On most modern processes, this is in range -2^63 .. 2^63-1
+-- On most modern processors, this has a range of -2^63 .. 2^63-1
 -- But it might be narrower. Be careful!
 -- If you need specific sized integers, they exist (e.g. Int8, Int16, Int32)
 int :: Int
@@ -66,9 +73,11 @@ aBigNumber = (2 :: Integer) ^ (1024 :: Integer)
 -- although there are ones that will give you rationals (Rational), and
 -- arbitrarily large fixed-point reals (FixedPoint).
 
+--------------------------------------------------------------------------------
+
 -- Haskell's has two inbuilt collection types. The first is the list.
 -- From a programming perspective, this is literally a singly-linked list,
--- much like you'll in computer science textbooks.
+-- much like you'll find in computer science textbooks.
 -- That means no O(1) indexing!
 -- Lists store 0 or more values of the same type. (No mixing types in lists!)
 aList :: [Int]
@@ -91,6 +100,9 @@ aToZ = ['A'..'Z'] -- "ABCD..XYZ"
 infiniteList :: [Integer]
 infiniteList = [1..] -- [1,2,3,...]
 
+-- Any type that belonds to the `Enum` Typeclass (more on those later) can
+-- be used with ranges!
+
 -- You can index into lists (though don't forget its an O(n) operation!)
 oneThousand :: Integer
 oneThousand = [1..] !! 999 -- 1000
@@ -102,9 +114,11 @@ oneThousand = [1..] !! 999 -- 1000
 oneTo6 :: [Int]
 oneTo6 = [1,2,3] ++ [4,5,6]
 
--- We can also just append to the head. This is a O(1) operation
+-- We can also append single elements to the head. This is a O(1) operation
 oneTo4 :: [Int]
 oneTo4 = 1 : [2,3,4] -- [1,2,3,4]
+-- Note that [1,2,3] : [4,5,6] wouldn't work, because the first thing
+-- is also a list.
 
 -- We also have list comprehensions (a-la Python):
 doubled1to5 :: [Int]
@@ -120,6 +134,8 @@ withFilter = [ x * x | x <- [1..10], x*x > 16] -- [25,36,49,64,81,100]
 aTuple :: (Int, Bool, String)
 aTuple = (42, True, "Hello, World")
 
+--------------------------------------------------------------------------------
+
 -- Functions are defined similarly to other values:
 -- Here, `add` is the name of the function, and `a` and `b` are the names of its
 -- arguments.
@@ -130,7 +146,7 @@ add :: Int -> Int -> Int
 -- The `->` arrow is pronounced "to", i.e. "Int to Int to Int"
 -- The types line up positionally with the arguments and return value.
 -- i.e. The first type corresponds to the first argument, the second type to the
--- second argument, etc. The last type in the chain is always the return value.
+-- second argument, etc. The last type in the chain is always the return type.
 -- In this sense, constants are just functions which take no arguments, and
 -- always return the same value!
 
@@ -139,10 +155,10 @@ add :: Int -> Int -> Int
 callAdd :: Int
 callAdd = add 2 3 -- 6
 -- In Haskell, its normal to say functions are "applied" rather than "called".
--- So the above would be said as "add applied to 2 and 3"
+-- So the above would be said as "add applied to 2 then 3"
 
 -- You can also use functions in an infix position, but putting backticks (`)
--- around the function name
+-- around the function name:
 infixAdd :: Int
 infixAdd = 7 `add` 11
 
@@ -163,6 +179,9 @@ prefixMod = (%) 7 3 -- 1
 -- `null` or `None` or `nil` like in most other languages (there's no such
 -- thing in Haskell!). The closest thing to `null` conceptually is the `Maybe`
 -- type, which we'll get to later.
+-- There is a type and value called "unit", which is written as `()` (i.e. empty
+-- parentheses). However, if a function returns that, that's the only thing it
+-- can ever return.
 -- Functions also have to do the same thing every time you give them the same
 -- arguments. `2 + 2` can't return `4` the first time you do it, and delete your
 -- database the second time. It must always return `4`.
@@ -176,7 +195,9 @@ factorial n =
     else n * factorial (n - 1)
 -- The main thing to note here is that the `else` is mandatory, and both the
 -- `then` and `else` block must have the same type. (e.g. You can't have one
--- return a string, and the other an integer)
+-- return a string, and the other an integer).
+-- In this sense, it's more similar to a ternary operator ( ? : ) in C, than a
+-- normal if-then-else in most languages.
 
 -- Another way is to to use guards. These are similar to an if-then-else chain:
 factorialAgain :: Int -> Int
@@ -204,8 +225,8 @@ naiveFibonacci n = naiveFibonacci (n - 1) + naiveFibonacci (n - 2)
 
 -- Pattern matching can be done one almost any type, and is very powerful!
 -- Here's pattern matching on tuples:
-patterMatchTuples :: (Int, Int) -> (Int  , Int  )
-patterMatchTuples    (x  , y  )  = (x + 1, y + 2)
+patternMatchTuples :: (Int, Int) -> (Int  , Int  )
+patternMatchTuples    (x  , y  )  = (x + 1, y + 2)
 -- This is very useful for deconstructing complex types. Here we use it to break
 -- a tuple up into its parts, naming the first part `x` and the second part `y`.
 
@@ -218,6 +239,14 @@ addAll (x:xs) = x + addAll xs
 -- head of the list `x`, and the tail (i.e. remainder) of the list `xs`.
 -- ASIDE: If you're using a linter, it will probably tell you that `addAll`
 -- can be rewritten using the `foldr` function.
+
+-- There is a syntax that means you don't have to rewrite the function name
+-- several times
+addAllAgain :: [Int] -> Int
+addAllAgain list = case list of
+  []   -> 0
+  x:xs -> x + addAllAgain xs
+-- This is functionally identical to the first `addAll` function.
 
 -- You can pattern match on your own types, too! (We'll get to that later.)
 
@@ -256,13 +285,13 @@ add42 = add 42
 
 -- ASIDE: The term "curry" comes from a guy called Haskell Curry, who invented
 -- the concept. The language Haskell is also named after him.
--- It's (sadly) nothing to do with Indian food =(
+-- It's (sadly) nothing to do with Indian food, which is delicious.
 
 -- In Haskell, you can pass functions as arguments to other functions.
 -- Probably the most common form of this is the `map` function, which
 -- takes a function and some container type (e.g. a list), and applies the
--- function to every element in the list (if any).
--- It then returns the resulting list.
+-- function to every element in the container (if any).
+-- It then returns the resulting container.
 myMap :: (a -> b) -> [a] -> [b]
 myMap _    []     = []
 myMap func (x:xs) = func x : myMap func xs
@@ -280,3 +309,209 @@ mapExample2 :: [Int]
 mapExample2 = myMap (\x -> x + 42) [1,2,3]
 -- If you need a lambda that takes multiple arguments, you can write it like so:
 -- (\x y -> x + y)
+
+-- ASIDE: Haskell does not have an in-built loop construct (e.g. the `for` or
+-- `while` that are often found in other languages).
+-- All repetition is implemented using recursion (though this may be optimized
+-- by the compiler to be loop-like under the hood).
+-- There are many built-in functions which do some sort of loop. For example:
+-- `fmap`, `filter`, `foldl` and `foldr`
+-- It's actually very rare that you will need to do recursion by hand. For any
+-- loop-like operation you need to perform, there are probably already library
+-- functions you can compose together to do it for you.
+
+--------------------------------------------------------------------------------
+
+-- Haskell allows you to define your own types and data structures.
+-- A simple example would be:
+data Colour = Red | Green | Blue
+
+-- We could then write a function which uses our new type:
+say :: Colour -> String
+say Red   = "Makes it go faster."
+say Blue  = "Cooler than Fonzie."
+say Green = "Good for the environment."
+
+-- We can also define polymorphic data types (a.k.a. generics in other
+-- languages)
+data Option a = None | Some a
+-- The `a` here is a type parameter. We can put any type we want in there.
+-- So for example, we could have a `Maybe Int` or a `Maybe [Double]`, or even
+-- a `Maybe Maybe String` (though that's a bad idea for other reasons).
+
+-- Here's how we might use this type:
+thatsLife :: Option Int
+thatsLife = Some 42
+
+nothingHere :: Option Int
+nothingHere = None
+
+-- Some terminology: `Option` is said to be the "type", while `None` and `Some`
+-- are said to be the "data constructors". Somewhat confusingly, a type and
+-- data constructor can have the same name. e.g. the following would be valid:
+data OptionB a = Nope | OptionB a
+
+-- The data constructors are special functions, but they are still functions.
+-- You can use them anywhere you'd otherwise use a function, so long as the
+-- types fit.
+
+-- You can pattern match on these sorts of types, just like anything else.
+-- Here's a `map` function for `Option`:
+mapOption :: (a -> b) -> Option a -> Option b
+mapOption _ None     = None
+mapOption f (Some a) = Some (f a)
+
+-- An equivalent to `Option` exists in the standard library.
+-- It's called `Maybe`. It's data constructors are `Nothing` and `Just`.
+
+-- For complex structures, it is preferable to use so called "record" syntax.
+-- This allows you to name fields in the structure, which can then be used to
+-- get and set specific fields.
+data Person = Person { name :: String, height :: Double, age :: Int }
+  deriving (Show)
+
+-- The `deriving (Show)` will be explained later, but basically it allows
+-- the type to be turned into a string (and thus printed to console).
+
+-- There is also "positional" syntax. It should not be used where order matters
+-- or where what goes where could be ambiguous.
+data OtherPerson = OtherPerson String Double Int
+
+-- Records can be used with positional notation, but the reverse is not true.
+
+-- Positional construction
+hanSolo :: Person
+hanSolo = Person "Han Solo" 180 64
+
+-- Record construction
+obiWan :: Person
+obiWan = Person { age = 57, height = 182, name = "Obi-Wan Kenobi" }
+
+-- The field names are also functions.
+-- So, for example, `name` has the type:
+-- name :: Person -> String
+-- You give it a Person, and it will give you their name.
+
+-- They can also be used as setters.
+-- For example
+sneakyObiWan :: Person
+sneakyObiWan = obiWan { name = "Ben Kenobi" }
+
+-- Note that the original isn't modified by this. It produces a new `Person`
+-- with updated record fields.
+
+--------------------------------------------------------------------------------
+
+-- TYPECLASSES!:
+
+-- Haskell allows you to define so called "Typeclasses", which are essentially
+-- a way of describing a set of operations that can be used on instances of that
+-- Typeclass.
+-- The closest analogy in other languages would be Interfaces (Java, C++, etc)
+-- or Traits (Scala, Rust, etc). However, Typeclasses are much more flexible and
+-- powerful than a regular Interface.
+
+-- It's worth stating: Despite the name and syntax, Typeclasses have almost
+-- nothing in common with the OO concept of a Class.
+
+-- As an example, lets define our own `Eq` typeclass.
+class Eq a where
+  (==) :: a -> a -> Bool
+  (!=) :: a -> a -> Bool
+  a == b = not (a != b)
+  a != b = not (a Examples.== b)
+-- Here we've defined a typeclass called `Eq`, with two functions (==) and
+-- (!=). We've given the functions some default implementations that can be
+-- overwritten by instances.
+
+-- Side Note: We need to specify "Examples.==" there because it clashes with the
+-- inbuilt `==` function.
+-- Similarly below, we need to specify which 'Eq' and '==' we mean.
+
+-- Lets now declare an instance of our typeclass:
+instance Examples.Eq Person where
+  p1 == p2 =
+    (name   p1 P.== name   p2) &&
+    (height p1 P.== height p2) &&
+    (age    p1 P.== age    p2)
+
+-- Note that because of the way the default functions are defined, we did not
+-- need to overwrite both of them - one was enough.
+-- This is a common pattern in Haskell called the "minimal complete definition"
+-- Where some subset of a typeclass's functions are enough to implement the rest
+-- of them.
+
+-- Instances of typeclasses need not be "concrete" - they can themselves be
+-- polymorphic.
+-- For instance, we can define a "Functor" typeclass. (Functor is just a fancy
+-- math word for "thing you can map over").
+
+class Functor f where
+  fmap :: (a -> b) -> f a -> f b
+
+instance Examples.Functor [] where
+  fmap _ [] = []
+  fmap f (x:xs) = f x : myMap f xs
+
+instance Examples.Functor Option where
+  fmap _ None = None
+  fmap f (Some a) = Some (f a)
+
+-- They really cool thing about typeclasses is that they separate type
+-- declaration from the interface or operations that work on that type.
+-- You can make your custom types instances of inbuilt or 3rd party typeclasses,
+-- and then functions that work on instances of those typeclasses will also work
+-- on your types.
+
+-- The corollary is that you can declare your own typeclasses, and then make
+-- inbuilt or 3rd party types instances, so that your functions work on them.
+
+--------------------------------------------------------------------------------
+
+-- Haskell lets you constrain both Functions and Typeclasses in terms of what
+-- types of arguments you can take.
+
+-- A simple example of this is sorting: To be able to put something in order,
+-- you first need to be able to compare its elements with (>), (>=), (<), (<=),
+-- and (==)
+
+-- This is where the `Ord` typeclass comes in!
+-- Here's its definition:
+
+-- class P.Eq a => Ord a where
+--   compare :: a -> a -> Ordering
+--   (<)     :: a -> a -> Bool
+--   (<=)    :: a -> a -> Bool
+--   (>)     :: a -> a -> Bool3
+--   (>=)    :: a -> a -> Bool
+--   max     :: a -> a -> a
+--   min     :: a -> a -> a
+
+-- The first thing to note here is the `P.Eq a =>`
+-- This is a "type constraint". It says that a precondition of a type being an
+-- instance of the typeclass "Ord" is that it is also an instance of the
+-- typeclass "Eq".
+-- Put another way, all Ords are Eqs, but not all Eqs are are Ords.
+
+-- We can do the same sort of thing for functions. Here's a (naive) quicksort
+-- function
+quicksort :: Ord a => [a] -> [a]
+quicksort [] = []
+quicksort (pivot:xs) =
+  quicksort [x | x <- xs, x < pivot]
+  ++ [pivot]
+  ++ quicksort [x | x <- xs, x >= pivot]
+
+-- The `Ord a` constraint is necessary to be able to use the comparison
+-- operators.
+
+-- We can also constrain inputs in multiple different ways.
+-- For instance, this says that for all `a`, `a` must be an instance of both
+-- `Num` and `Show`, while `b` need only be a member of `show`.
+constraintExample :: (Num a, Show a, Show b) => a -> a -> b -> String
+constraintExample x y t =
+   show x ++ " plus " ++ show y ++ " is " ++ show (x+y) ++ ".  " ++ show t
+
+-- The same goes for typeclasses!
+-- Here's a diagram of some of the default Typeclasses, and their instances:
+-- https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Classes.svg/480px-Classes.svg.png
