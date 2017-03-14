@@ -515,3 +515,25 @@ constraintExample x y t =
 -- The same goes for typeclasses!
 -- Here's a diagram of some of the default Typeclasses, and their instances:
 -- https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Classes.svg/480px-Classes.svg.png
+
+-- For many of the simple type classes (e.g. Read, Show, Bounded, Enum, Eq, Ord,
+-- and Functor) the Haskell compiler can automatically derive instances for you.
+
+-- For example, we can define a binary tree like so:
+data BTree a = Leaf | Node a (BTree a) (BTree a)
+  deriving (Show, P.Eq, Ord)
+
+-- And we will automatically get these functions for free
+--   show    :: (Show a) => BTree a -> String
+--   (==)    :: (Eq a)   => BTree a -> BTree a -> Bool
+--   (/=)    :: (Eq a)   => BTree a -> BTree a -> Bool
+--   compare :: (Ord a)  => BTree a -> BTree a -> Ordering
+--   (<)     :: (Ord a)  => BTree a -> BTree a -> Bool
+--   (<=)    :: (Ord a)  => BTree a -> BTree a -> Bool
+--   (>)     :: (Ord a)  => BTree a -> BTree a -> Bool3
+--   (>=)    :: (Ord a)  => BTree a -> BTree a -> Bool
+--   max     :: (Ord a)  => BTree a -> BTree a -> a
+--   min     :: (Ord a)  => BTree a -> BTree a -> a
+
+-- There are also language extension that allow automatic derivation of
+-- Functor, Foldable, and Traversable
