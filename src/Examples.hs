@@ -310,6 +310,15 @@ mapExample2 = myMap (\x -> x + 42) [1,2,3]
 -- If you need a lambda that takes multiple arguments, you can write it like so:
 -- (\x y -> x + y)
 
+-- Because of currying, we can pass partial functions "in line". For example:
+mapExample3 :: [Int]
+mapExample3 = myMap (* 42) [1,2,3,5,7,11]
+-- Will have the effect of multiplying each element in the supplied list by 42.
+-- This is not limited to operators. Any function can be passed like this.
+-- As a corollary, almost all operators in Haskell are functions (at least in
+-- the sense that they have a type, and can be used in the same ways a function
+-- could be used).
+
 -- ASIDE: Haskell does not have an in-built loop construct (e.g. the `for` or
 -- `while` that are often found in other languages).
 -- All repetition is implemented using recursion (though this may be optimized
@@ -399,6 +408,21 @@ sneakyObiWan = obiWan { name = "Ben Kenobi" }
 
 -- Note that the original isn't modified by this. It produces a new `Person`
 -- with updated record fields.
+
+-- Haskell also allows you to alias existing types
+-- For example:
+type Name = String
+-- This would create an alias of "String" called "Name".
+-- Done this way, "String" and "Name" are compatible. You can use a "Name"
+-- anywhere you can use a "String". This is chielfy useful for giving your types
+-- more semantic names.
+
+-- `newtype` by constrast, creates deliberately incompatible types.
+-- Here, though "Home" and "Work" represent the same sort of thing (phone
+-- nubmers), you would not be able to use one where the other was expected.
+newtype Home = Home String
+newtype Work = Work String
+data Phone = Phone Home Work
 
 --------------------------------------------------------------------------------
 
@@ -520,20 +544,130 @@ constraintExample x y t =
 -- and Functor) the Haskell compiler can automatically derive instances for you.
 
 -- For example, we can define a binary tree like so:
-data BTree a = Leaf | Node a (BTree a) (BTree a)
+data Tree a = Leaf | Node a (Tree a) (Tree a)
   deriving (Show, P.Eq, Ord)
 
 -- And we will automatically get these functions for free
---   show    :: (Show a) => BTree a -> String
---   (==)    :: (Eq a)   => BTree a -> BTree a -> Bool
---   (/=)    :: (Eq a)   => BTree a -> BTree a -> Bool
---   compare :: (Ord a)  => BTree a -> BTree a -> Ordering
---   (<)     :: (Ord a)  => BTree a -> BTree a -> Bool
---   (<=)    :: (Ord a)  => BTree a -> BTree a -> Bool
---   (>)     :: (Ord a)  => BTree a -> BTree a -> Bool3
---   (>=)    :: (Ord a)  => BTree a -> BTree a -> Bool
---   max     :: (Ord a)  => BTree a -> BTree a -> a
---   min     :: (Ord a)  => BTree a -> BTree a -> a
+  -- show    :: (Show a) => Tree a -> String
+  -- (==)    :: (Eq a)   => Tree a -> Tree a -> Bool
+  -- (/=)    :: (Eq a)   => Tree a -> Tree a -> Bool
+  -- compare :: (Ord a)  => Tree a -> Tree a -> Ordering
+  -- (<)     :: (Ord a)  => Tree a -> Tree a -> Bool
+  -- (<=)    :: (Ord a)  => Tree a -> Tree a -> Bool
+  -- (>)     :: (Ord a)  => Tree a -> Tree a -> Bool3
+  -- (>=)    :: (Ord a)  => Tree a -> Tree a -> Bool
+  -- max     :: (Ord a)  => Tree a -> Tree a -> a
+  -- min     :: (Ord a)  => Tree a -> Tree a -> a
 
 -- There are also language extension that allow automatic derivation of
 -- Functor, Foldable, and Traversable
+
+--------------------------------------------------------------------------------
+
+-- Operators and Syntactic sugar
+
+-- Because Haskell allows you to define your own operators, its also sometimes
+-- necessary to define the precedence and associativity of those operators.
+
+-- The inbuilt operators all have a numerical precedence level and an
+-- associativity (left or right) assigned to them.
+-- You can see the basic ones here:
+-- https://rosettacode.org/wiki/Operator_precedence#Haskell
+
+-- You can easily find out the precedence for a specific operator by typing
+-- `:i <operator you want to look up>` into GHCI.
+-- For example, `:i +` will tell you that plus is "infixl 6", i.e. an infix
+-- operator that is left associative, and with precedence level 6.
+
+-- The precedence levels are between between 0 and 9, with fuctions with higher
+-- precedence being applied first.
+-- There is a theoretical 10th level containing function application (i.e. the
+-- space operator).
+
+-- Suppose we defined the following function:
+(|||) :: (a -> Bool) -> (a -> Bool) -> a -> Bool
+(|||) f g x = (f x) || (g x)
+
+-- Then we could set its fixity like so
+infixr 3 |||
+
+-- And then use it like so:
+evenOrPositive :: Integral a => a -> Bool
+evenOrPositive = even ||| (> 0)
+
+-- A couple of very useful operators are `.` and `$`
+-- `$` is just function application with the lowest precedence:
+
+($) :: (a -> b) -> a -> b
+f $ x = f x
+
+infixr 0 $
+
+-- The most common use is to avoid using lots of brackets. So for example, an
+-- expression like:
+-- f (g (h x y z))
+-- might instead be written as
+-- f $ g $ h x y z
+
+-- `.` is function composition (just like in maths)
+(.) :: (b -> c) -> (a -> b) -> a -> c
+(.) f g x = f (g x)
+
+infixr 9 .
+
+-- Another very useful operator is <$>
+-- It's the `map` operator (as in, the one we defined for `Functor`)
+-- so instead of writing:
+-- fmap (* 42) [1,2,3,4]
+-- we could instead write
+-- (* 42) <$> [1,2,3,4]
+
+-- In this sense, `$` is function application for raw values, while `<$>` is
+-- function application for functors.
+
+-- Looked at another way, the type signature for ($) :: (a -> b) -> a -> b
+-- says that `$` takes a function and gives you back the same function
+-- while (<$>) :: (a -> b) -> f a -> f b
+-- says that `<$>` takes a function and gives you back a function over whatever
+-- Functor you're working with. In other words, it "lifts" the function
+-- into the context of the Functor.
+
+-- List syntax is just syntactic sugar, e.g
+withSugar :: [Int]
+withSugar = [1,2,3,4]
+
+noSugar :: [Int]
+noSugar = 1:2:3:4:[]
+
+-- This also highlights another point: `:` is a function of type
+-- (:) :: a -> [a] -> [a]
+-- infixr 5 :
+
+--------------------------------------------------------------------------------
+
+-- Sub expressions
+
+-- While Haskell is highly expression oriented - in the sense that every
+-- function is really just a one-line expression - it does allow you to declare
+-- named subexpressions, to amke things more readable.
+-- There are two syntaxes for this: `where` and `let .. in`
+
+-- Here are some examples
+quadratic :: Double -> Double -> Double -> (Double, Double)
+quadratic a b c = ((negB + root) / denom, (negB - root) / denom)
+  where
+    negB  = -b
+    root  = sqrt P.$ (b ^ (2 :: Integer)) - (4 * a * c)
+    denom = 2 * a
+
+-- We could write the above using `let` as:
+quadratic2 :: Double -> Double -> Double -> (Double, Double)
+quadratic2 a b c =
+  let
+    negB = -b
+    root = sqrt P.$ (b ^ (2 :: Integer)) - (4 * a * c)
+    denom = 2 * a
+  in ((negB + root) / denom, (negB - root) / denom)
+
+-- The main advantage of `let .. in` vs `where` is that `let .. in` is an
+-- expression in and of itself, and can thus be the return value of a function.
