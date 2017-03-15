@@ -100,7 +100,7 @@ aToZ = ['A'..'Z'] -- "ABCD..XYZ"
 infiniteList :: [Integer]
 infiniteList = [1..] -- [1,2,3,...]
 
--- Any type that belonds to the `Enum` Typeclass (more on those later) can
+-- Any type that belongs to the `Enum` Typeclass (more on those later) can
 -- be used with ranges!
 
 -- You can index into lists (though don't forget its an O(n) operation!)
@@ -126,7 +126,7 @@ doubled1to5 = [ x * 2 | x <- [1..5]] -- [2,4,6,8,10]
 
 -- We can also filter in list comprehensions
 withFilter :: [Int]
-withFilter = [ x * x | x <- [1..10], x*x > 16] -- [25,36,49,64,81,100]
+withFilter = [ x * x | x <- [1..10], x * x > 16] -- [25,36,49,64,81,100]
 
 -- The other in-built collection type is the tuple.
 -- Tuples group a fixed number of things together, but the things can be
@@ -417,7 +417,7 @@ type Name = String
 -- anywhere you can use a "String". This is chielfy useful for giving your types
 -- more semantic names.
 
--- `newtype` by constrast, creates deliberately incompatible types.
+-- `newtype` by constrast creates deliberately incompatible types.
 -- Here, though "Home" and "Work" represent the same sort of thing (phone
 -- nubmers), you would not be able to use one where the other was expected.
 newtype Home = Home String
@@ -462,11 +462,11 @@ instance Examples.Eq Person where
 -- Note that because of the way the default functions are defined, we did not
 -- need to overwrite both of them - one was enough.
 -- This is a common pattern in Haskell called the "minimal complete definition"
--- Where some subset of a typeclass's functions are enough to implement the rest
+-- where some subset of a typeclass's functions are enough to implement the rest
 -- of them.
 
 -- Instances of typeclasses need not be "concrete" - they can themselves be
--- polymorphic.
+-- polymorphic (a.k.a. higher-order).
 -- For instance, we can define a "Functor" typeclass. (Functor is just a fancy
 -- math word for "thing you can map over").
 
@@ -493,7 +493,7 @@ instance Examples.Functor Option where
 --------------------------------------------------------------------------------
 
 -- Haskell lets you constrain both Functions and Typeclasses in terms of what
--- types of arguments you can take.
+-- types of arguments they can take.
 
 -- A simple example of this is sorting: To be able to put something in order,
 -- you first need to be able to compare its elements with (>), (>=), (<), (<=),
@@ -506,7 +506,7 @@ instance Examples.Functor Option where
 --   compare :: a -> a -> Ordering
 --   (<)     :: a -> a -> Bool
 --   (<=)    :: a -> a -> Bool
---   (>)     :: a -> a -> Bool3
+--   (>)     :: a -> a -> Bool
 --   (>=)    :: a -> a -> Bool
 --   max     :: a -> a -> a
 --   min     :: a -> a -> a
@@ -515,7 +515,7 @@ instance Examples.Functor Option where
 -- This is a "type constraint". It says that a precondition of a type being an
 -- instance of the typeclass "Ord" is that it is also an instance of the
 -- typeclass "Eq".
--- Put another way, all Ords are Eqs, but not all Eqs are are Ords.
+-- Put another way, all Ords are Eqs, but not all Eqs are Ords.
 
 -- We can do the same sort of thing for functions. Here's a (naive) quicksort
 -- function
@@ -554,7 +554,7 @@ data Tree a = Leaf | Node a (Tree a) (Tree a)
   -- compare :: (Ord a)  => Tree a -> Tree a -> Ordering
   -- (<)     :: (Ord a)  => Tree a -> Tree a -> Bool
   -- (<=)    :: (Ord a)  => Tree a -> Tree a -> Bool
-  -- (>)     :: (Ord a)  => Tree a -> Tree a -> Bool3
+  -- (>)     :: (Ord a)  => Tree a -> Tree a -> Bool
   -- (>=)    :: (Ord a)  => Tree a -> Tree a -> Bool
   -- max     :: (Ord a)  => Tree a -> Tree a -> a
   -- min     :: (Ord a)  => Tree a -> Tree a -> a
@@ -586,7 +586,7 @@ data Tree a = Leaf | Node a (Tree a) (Tree a)
 
 -- Suppose we defined the following function:
 (|||) :: (a -> Bool) -> (a -> Bool) -> a -> Bool
-(|||) f g x = (f x) || (g x)
+(|||) f g x = f x || g x
 
 -- Then we could set its fixity like so
 infixr 3 |||
@@ -610,6 +610,7 @@ infixr 0 $
 -- f $ g $ h x y z
 
 -- `.` is function composition (just like in maths)
+-- i.e. (f . g) x == f (g x)
 (.) :: (b -> c) -> (a -> b) -> a -> c
 (.) f g x = f (g x)
 
@@ -649,7 +650,7 @@ noSugar = 1:2:3:4:[]
 
 -- While Haskell is highly expression oriented - in the sense that every
 -- function is really just a one-line expression - it does allow you to declare
--- named subexpressions, to amke things more readable.
+-- named subexpressions, to make things more readable.
 -- There are two syntaxes for this: `where` and `let .. in`
 
 -- Here are some examples
