@@ -100,7 +100,7 @@ aToZ = ['A'..'Z'] -- "ABCD..XYZ"
 infiniteList :: [Integer]
 infiniteList = [1..] -- [1,2,3,...]
 
--- Any type that belonds to the `Enum` Typeclass (more on those later) can
+-- Any type that belongs to the `Enum` Typeclass (more on those later) can
 -- be used with ranges!
 
 -- You can index into lists (though don't forget its an O(n) operation!)
@@ -126,7 +126,7 @@ doubled1to5 = [ x * 2 | x <- [1..5]] -- [2,4,6,8,10]
 
 -- We can also filter in list comprehensions
 withFilter :: [Int]
-withFilter = [ x * x | x <- [1..10], x*x > 16] -- [25,36,49,64,81,100]
+withFilter = [ x * x | x <- [1..10], x * x > 16] -- [25,36,49,64,81,100]
 
 -- The other in-built collection type is the tuple.
 -- Tuples group a fixed number of things together, but the things can be
@@ -153,7 +153,7 @@ add :: Int -> Int -> Int
 -- The syntax for function calls is different from most other languages.
 -- Instead of using parentheses, it uses space!
 callAdd :: Int
-callAdd = add 2 3 -- 6
+callAdd = (add 2) 3 -- 5
 -- In Haskell, its normal to say functions are "applied" rather than "called".
 -- So the above would be said as "add applied to 2 then 3"
 
@@ -212,7 +212,7 @@ factorialAgain n
 -- Some people advocate writing the above like this:
 factorialYetAgain :: Int -> Int
 factorialYetAgain n | n <= 1 = 1
-factorialYetAgain n          = n * factorialAgain (n - 1)
+factorialYetAgain n          = n * factorialYetAgain (n - 1)
 
 -- The third way is pattern matching:
 naiveFibonacci :: Int -> Int
@@ -312,8 +312,8 @@ mapExample2 = myMap (\x -> x + 42) [1,2,3]
 
 -- Because of currying, we can pass partial functions "in line". For example:
 mapExample3 :: [Int]
-mapExample3 = myMap (* 42) [1,2,3,5,7,11]
--- Will have the effect of multiplying each element in the supplied list by 42.
+mapExample3 = myMap (+ 42) [1,2,3,5,7,11]
+-- Will have the effect of adding each element in the supplied list to 42.
 -- This is not limited to operators. Any function can be passed like this.
 -- As a corollary, almost all operators in Haskell are functions (at least in
 -- the sense that they have a type, and can be used in the same ways a function
@@ -345,8 +345,8 @@ say Green = "Good for the environment."
 -- languages)
 data Option a = None | Some a
 -- The `a` here is a type parameter. We can put any type we want in there.
--- So for example, we could have a `Maybe Int` or a `Maybe [Double]`, or even
--- a `Maybe Maybe String` (though that's a bad idea for other reasons).
+-- So for example, we could have a `Option Int` or a `Option [Double]`, or even
+-- a `Option Option String` (though that's a bad idea for other reasons).
 
 -- Here's how we might use this type:
 thatsLife :: Option Int
@@ -372,6 +372,7 @@ mapOption f (Some a) = Some (f a)
 
 -- An equivalent to `Option` exists in the standard library.
 -- It's called `Maybe`. It's data constructors are `Nothing` and `Just`.
+-- data Maybe a = Nothing | Just a
 
 -- For complex structures, it is preferable to use so called "record" syntax.
 -- This allows you to name fields in the structure, which can then be used to
@@ -414,10 +415,10 @@ sneakyObiWan = obiWan { name = "Ben Kenobi" }
 type Name = String
 -- This would create an alias of "String" called "Name".
 -- Done this way, "String" and "Name" are compatible. You can use a "Name"
--- anywhere you can use a "String". This is chielfy useful for giving your types
+-- anywhere you can use a "String". This is chiefly useful for giving your types
 -- more semantic names.
 
--- `newtype` by constrast, creates deliberately incompatible types.
+-- `newtype` by constrast creates deliberately incompatible types.
 -- Here, though "Home" and "Work" represent the same sort of thing (phone
 -- nubmers), you would not be able to use one where the other was expected.
 newtype Home = Home String
@@ -462,11 +463,11 @@ instance Examples.Eq Person where
 -- Note that because of the way the default functions are defined, we did not
 -- need to overwrite both of them - one was enough.
 -- This is a common pattern in Haskell called the "minimal complete definition"
--- Where some subset of a typeclass's functions are enough to implement the rest
+-- where some subset of a typeclass's functions are enough to implement the rest
 -- of them.
 
 -- Instances of typeclasses need not be "concrete" - they can themselves be
--- polymorphic.
+-- polymorphic (a.k.a. higher-order, or higher-kinds).
 -- For instance, we can define a "Functor" typeclass. (Functor is just a fancy
 -- math word for "thing you can map over").
 
@@ -481,7 +482,7 @@ instance Examples.Functor Option where
   fmap _ None = None
   fmap f (Some a) = Some (f a)
 
--- They really cool thing about typeclasses is that they separate type
+-- The really cool thing about typeclasses is that they separate type
 -- declaration from the interface or operations that work on that type.
 -- You can make your custom types instances of inbuilt or 3rd party typeclasses,
 -- and then functions that work on instances of those typeclasses will also work
@@ -493,7 +494,7 @@ instance Examples.Functor Option where
 --------------------------------------------------------------------------------
 
 -- Haskell lets you constrain both Functions and Typeclasses in terms of what
--- types of arguments you can take.
+-- types of arguments they can take.
 
 -- A simple example of this is sorting: To be able to put something in order,
 -- you first need to be able to compare its elements with (>), (>=), (<), (<=),
@@ -506,7 +507,7 @@ instance Examples.Functor Option where
 --   compare :: a -> a -> Ordering
 --   (<)     :: a -> a -> Bool
 --   (<=)    :: a -> a -> Bool
---   (>)     :: a -> a -> Bool3
+--   (>)     :: a -> a -> Bool
 --   (>=)    :: a -> a -> Bool
 --   max     :: a -> a -> a
 --   min     :: a -> a -> a
@@ -515,7 +516,7 @@ instance Examples.Functor Option where
 -- This is a "type constraint". It says that a precondition of a type being an
 -- instance of the typeclass "Ord" is that it is also an instance of the
 -- typeclass "Eq".
--- Put another way, all Ords are Eqs, but not all Eqs are are Ords.
+-- Put another way, all Ords are Eqs, but not all Eqs are Ords.
 
 -- We can do the same sort of thing for functions. Here's a (naive) quicksort
 -- function
@@ -554,10 +555,17 @@ data Tree a = Leaf | Node a (Tree a) (Tree a)
   -- compare :: (Ord a)  => Tree a -> Tree a -> Ordering
   -- (<)     :: (Ord a)  => Tree a -> Tree a -> Bool
   -- (<=)    :: (Ord a)  => Tree a -> Tree a -> Bool
-  -- (>)     :: (Ord a)  => Tree a -> Tree a -> Bool3
+  -- (>)     :: (Ord a)  => Tree a -> Tree a -> Bool
   -- (>=)    :: (Ord a)  => Tree a -> Tree a -> Bool
-  -- max     :: (Ord a)  => Tree a -> Tree a -> a
-  -- min     :: (Ord a)  => Tree a -> Tree a -> a
+  -- max     :: (Ord a)  => Tree a -> Tree a -> Tree a
+  -- min     :: (Ord a)  => Tree a -> Tree a -> Tree a
+
+-- We can then compare trees - try it in the terminal.
+exampleTree1 :: Tree Int
+exampleTree1 = Node 7 (Node 42 Leaf Leaf) (Node 28 Leaf Leaf)
+
+exampleTree2 :: Tree Int
+exampleTree2 = Node 7 (Node 28 Leaf Leaf) (Node 42 Leaf Leaf)
 
 -- There are also language extension that allow automatic derivation of
 -- Functor, Foldable, and Traversable
@@ -586,7 +594,7 @@ data Tree a = Leaf | Node a (Tree a) (Tree a)
 
 -- Suppose we defined the following function:
 (|||) :: (a -> Bool) -> (a -> Bool) -> a -> Bool
-(|||) f g x = (f x) || (g x)
+(|||) f g x = f x || g x
 
 -- Then we could set its fixity like so
 infixr 3 |||
@@ -610,6 +618,7 @@ infixr 0 $
 -- f $ g $ h x y z
 
 -- `.` is function composition (just like in maths)
+-- i.e. (f . g) x == f (g x)
 (.) :: (b -> c) -> (a -> b) -> a -> c
 (.) f g x = f (g x)
 
@@ -626,8 +635,9 @@ infixr 9 .
 -- function application for functors.
 
 -- Looked at another way, the type signature for ($) :: (a -> b) -> a -> b
--- says that `$` takes a function and gives you back the same function
--- while (<$>) :: (a -> b) -> f a -> f b
+-- says that `$` takes a function and gives you back the same function (albeit
+-- at a lower precedence).
+-- (<$>) :: (a -> b) -> f a -> f b
 -- says that `<$>` takes a function and gives you back a function over whatever
 -- Functor you're working with. In other words, it "lifts" the function
 -- into the context of the Functor.
@@ -649,7 +659,7 @@ noSugar = 1:2:3:4:[]
 
 -- While Haskell is highly expression oriented - in the sense that every
 -- function is really just a one-line expression - it does allow you to declare
--- named subexpressions, to amke things more readable.
+-- named subexpressions, to make things more readable.
 -- There are two syntaxes for this: `where` and `let .. in`
 
 -- Here are some examples
