@@ -17,9 +17,13 @@ library
   hs-source-dirs:       src
   exposed-modules:      ConduitEx
                       , Examples
+                      , TypeClass.Declarations
+                      , TypeClass.Examples
+                      , TypeClass.Laws
   build-depends:        base >= 4.7 && < 5
                       , conduit
                       , conduit-combinators
+                      , constraints
   ghc-options:          -Wall
   default-language:     Haskell2010
 
