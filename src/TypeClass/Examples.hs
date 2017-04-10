@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveFunctor #-}
+
 module TypeClass.Examples where
 
 import           Data.Semigroup
@@ -46,6 +48,16 @@ incrementNumberWithFunctor = (+1) <$> Just 2
 
 incrementNumbersWithFunctor :: [Int]
 incrementNumbersWithFunctor = (+1) <$> [1, 2, 3]
+
+-- Deriving Functor.  Why does this work?
+data Tree a = Leaf a | Node (Tree a) (Tree a)
+  deriving (Show, Eq, Ord, Functor)
+
+simpleTree :: Tree Int
+simpleTree = Node (Node (Leaf 1) (Leaf 2)) (Leaf 3)
+
+fmappedTree :: Tree Int
+fmappedTree = (+1) <$> simpleTree
 
 functionComposition1 :: Int
 functionComposition1 = let f = (+2) . (*3) in f 1
