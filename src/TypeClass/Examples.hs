@@ -151,6 +151,33 @@ propertyMinusOverIntSemigroupAssociativity = property $ do
   c <- forAll (Minus <$> Gen.int Range.constantBounded)
   ((a <> b) <> c) === (a <> (b <> c))
 
+{-
+Boom!
+
+λ> check propertyMinusOverIntSemigroupAssociativity
+  ✗ <interactive> failed after 1 test and 63 shrinks.
+
+        ┏━━ src/TypeClass/Examples.hs ━━━
+    147 ┃ propertyMinusOverIntSemigroupAssociativity :: Property
+    148 ┃ propertyMinusOverIntSemigroupAssociativity = property $ do
+    149 ┃   a <- forAll (Minus <$> Gen.int Range.constantBounded)
+        ┃   │ Minus 0
+    150 ┃   b <- forAll (Minus <$> Gen.int Range.constantBounded)
+        ┃   │ Minus 0
+    151 ┃   c <- forAll (Minus <$> Gen.int Range.constantBounded)
+        ┃   │ Minus 1
+    152 ┃   ((a <> b) <> c) === (a <> (b <> c))
+        ┃   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        ┃   │ Failed (- lhs =/= + rhs)
+        ┃   │ - Minus (-1)
+        ┃   │ + Minus 1
+
+    This failure can be reproduced by running:
+    > recheck (Size 0) (Seed 5751647916938279750 2962186932628968523) <property>
+
+False
+-}
+
 listsFormASemigroup :: [Int]
 listsFormASemigroup = [1, 2] <> [3, 4]
 
