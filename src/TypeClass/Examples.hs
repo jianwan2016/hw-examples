@@ -41,8 +41,14 @@ addingTwoNumbers = 1 + 2
 addingTwoNumbersCurried :: Int
 addingTwoNumbersCurried = (+) 1 2
 
-incrementNumberWithApplicative :: Maybe Int
-incrementNumberWithApplicative = (+1) <$> Just 2
+incrementNumberWithFunctor :: Maybe Int
+incrementNumberWithFunctor = (+1) <$> Just 2
+
+incrementNumbersWithFunctor :: [Int]
+incrementNumbersWithFunctor = (+1) <$> [1, 2, 3]
+
+prependHiWithApplicative :: Maybe String
+prependHiWithApplicative = ("Hi " ++) <$> Just "Everyone"
 
 addTwoNumbersWithApplicative1 :: Maybe Int
 addTwoNumbersWithApplicative1 = (+) <$> Just 2 <*> Just 3
@@ -56,8 +62,20 @@ addTwoNumbersWithApplicative3 = (+) <$> Just 2 <*> Nothing
 addTwoNumbersWithApplicative4 :: Maybe Int
 addTwoNumbersWithApplicative4 = (+) <$> Nothing <*> Nothing
 
-prependHiWithApplicative :: Maybe String
-prependHiWithApplicative = ("Hi " ++) <$> Just "Everyone"
+addNumbersFromListWithApplicative1 :: [Int]
+addNumbersFromListWithApplicative1 = (+) <$> [1] <*> [10]
+
+addNumbersFromListWithApplicative2 :: [Int]
+addNumbersFromListWithApplicative2 = (+) <$> [] <*> [10]
+
+addNumbersFromListWithApplicative3 :: [Int]
+addNumbersFromListWithApplicative3 = (+) <$> [1] <*> []
+
+addNumbersFromListWithApplicative4 :: [Int]
+addNumbersFromListWithApplicative4 = (+) <$> [] <*> []
+
+addNumbersFromListWithApplicative5 :: [Int]
+addNumbersFromListWithApplicative5 = (+) <$> [1, 2, 3] <*> [10, 20, 30]
 
 appendTwoStringsWithApplicative :: Maybe String
 appendTwoStringsWithApplicative = (++) <$> Just "Hi " <*> Just "Everyone"
