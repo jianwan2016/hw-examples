@@ -59,6 +59,19 @@ simpleTree = Node (Node (Leaf 1) (Leaf 2)) (Leaf 3)
 fmappedTree :: Tree Int
 fmappedTree = (+1) <$> simpleTree
 
+data Tree2 a = Leaf2 a | Node2 (Tree2 a) (Tree2 a)
+  deriving (Show, Eq, Ord)
+
+instance Functor Tree2 where
+  f `fmap` Leaf2 a    = Leaf2 (f a)
+  f `fmap` Node2 a b  = Node2 (f `fmap` a) (f `fmap` b)
+
+simpleTree2 :: Tree2 Int
+simpleTree2 = Node2 (Node2 (Leaf2 1) (Leaf2 2)) (Leaf2 3)
+
+fmappedTree2 :: Tree2 Int
+fmappedTree2 = (+1) <$> simpleTree2
+
 functionComposition1 :: Int
 functionComposition1 = let f = (+2) . (*3) in f 1
 
