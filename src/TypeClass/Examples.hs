@@ -4,6 +4,10 @@ module TypeClass.Examples where
 
 import           Data.Semigroup
 
+import           Hedgehog
+import qualified Hedgehog.Gen   as Gen
+import qualified Hedgehog.Range as Range
+
 {-
 
 True is a value:
@@ -82,11 +86,70 @@ mechanical application of laws to improve the performance of programs.
 unitFormsASemigroup :: ()
 unitFormsASemigroup = () <> ()
 
+{-
+
+Is the above valid?
+
+Let's check the laws with property testing!
+
+-}
+
+unit :: Monad m => Gen.Gen m ()
+unit = Gen.enumBounded
+
+propertyUnitSemigroupAssociativity :: Property
+propertyUnitSemigroupAssociativity = property $ do
+  a <- forAll unit
+  b <- forAll unit
+  c <- forAll unit
+  ((a <> b) <> c) === (a <> (b <> c))
+
+{-
+
+What if you have more that one associative operation for the same type?
+
+In Haskell, newtype has no performance penatly, so introduce a new type
+to disambiguate!
+
+-}
+
 sumFormsASemigroup :: Sum Int
 sumFormsASemigroup = 2 <> 3
 
 productFormsASemigroup :: Product Int
 productFormsASemigroup = 2 <> 3
+
+{-
+
+Are these genuinely semigroups?
+
+-}
+
+propertySumOverIntSemigroupAssociativity :: Property
+propertySumOverIntSemigroupAssociativity = property $ do
+  a <- forAll (Sum <$> Gen.int Range.constantBounded)
+  b <- forAll (Sum <$> Gen.int Range.constantBounded)
+  c <- forAll (Sum <$> Gen.int Range.constantBounded)
+  ((a <> b) <> c) === (a <> (b <> c))
+
+propertyProductOverIntSemigroupAssociativity :: Property
+propertyProductOverIntSemigroupAssociativity = property $ do
+  a <- forAll (Product <$> Gen.int Range.constantBounded)
+  b <- forAll (Product <$> Gen.int Range.constantBounded)
+  c <- forAll (Product <$> Gen.int Range.constantBounded)
+  ((a <> b) <> c) === (a <> (b <> c))
+
+newtype Minus a = Minus a deriving (Eq, Show)
+
+instance Num a => Semigroup (Minus a) where
+  (Minus a) <> (Minus b) = Minus (a - b)
+
+propertyMinusOverIntSemigroupAssociativity :: Property
+propertyMinusOverIntSemigroupAssociativity = property $ do
+  a <- forAll (Minus <$> Gen.int Range.constantBounded)
+  b <- forAll (Minus <$> Gen.int Range.constantBounded)
+  c <- forAll (Minus <$> Gen.int Range.constantBounded)
+  ((a <> b) <> c) === (a <> (b <> c))
 
 listsFormASemigroup :: [Int]
 listsFormASemigroup = [1, 2] <> [3, 4]
