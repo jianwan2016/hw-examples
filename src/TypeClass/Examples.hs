@@ -4,6 +4,81 @@ module TypeClass.Examples where
 
 import           Data.Semigroup
 
+{-
+
+True is a value:
+
+  λ> :t True
+  True :: Bool
+
+Bool is a type:
+
+  λ> :k Bool
+  Bool :: *
+
+We say Bool has two inhabitants:
+
+  λ> :info Bool
+  data Bool = False | True
+
+The type () has one inhabitant:
+
+  λ> :t ()
+  () :: ()
+
+The type Void has no inhabitants whatsoever:
+
+  λ> :t Void
+
+  <interactive>:1:1: error: Data constructor not in scope: Void
+
+Just is a constructor (like True):
+
+  λ> :t Just
+  Just :: a -> Maybe a
+
+Maybe is a type constructor taking one type argument:
+
+  λ> :k Maybe
+  Maybe :: * -> *
+
+Either is a type constructor taking two type arguments:
+
+  λ> :k Either
+  Either :: * -> * -> *
+
+Type application can be partially applied:
+
+  λ> :k Either String
+  Either String :: * -> *
+
+In other words, `Maybe` and `Either String` have the same kind
+This will be important later when we discuss functors.
+
+-}
+
+{-
+Definition of a Semigroup:
+
+  class Semigroup a where
+    (<>) :: a -> a -> a
+
+Laws:
+* Associativity:         x <> (y <> z) === (x <> y) <> z
+
+Laws are unchecked by the compiler.  It is up to the typeclass instance
+to honour laws.
+
+Laws allow for fearless refactoring.  Any expression on the LHS can be replaced
+with the RHS and vice-versa without changing the meaning of the program.
+
+Rewriting in this way may have performance implications however.
+
+Library authors may describe rewrite rules that rewrite code according to
+mechanical application of laws to improve the performance of programs.
+
+-}
+
 unitFormsASemigroup :: ()
 unitFormsASemigroup = () <> ()
 
