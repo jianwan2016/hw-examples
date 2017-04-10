@@ -1,12 +1,19 @@
-{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveFunctor       #-}
+{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module TypeClass.Examples where
 
 import           Data.Semigroup
 
+import           Data.Typeable
 import           Hedgehog
 import qualified Hedgehog.Gen   as Gen
 import qualified Hedgehog.Range as Range
+
+--------------------------------------------------------------------------------
+-- Data & Types
 
 {-
 
@@ -61,6 +68,9 @@ This will be important later when we discuss functors.
 
 -}
 
+--------------------------------------------------------------------------------
+-- Semigroup
+
 {-
 Definition of a Semigroup:
 
@@ -95,7 +105,7 @@ Let's check the laws with property testing!
 -}
 
 unit :: Monad m => Gen.Gen m ()
-unit = Gen.enumBounded
+unit = pure ()
 
 propertyUnitSemigroupAssociativity :: Property
 propertyUnitSemigroupAssociativity = property $ do
@@ -178,17 +188,48 @@ Boom!
 False
 -}
 
+{-
+
+What else forms a semigroup?
+
+-}
+
 listsFormASemigroup :: [Int]
 listsFormASemigroup = [1, 2] <> [3, 4]
 
 stringsFormASemigroup :: String
 stringsFormASemigroup = "Hello" <> " " <> "World"
 
-semigroupsAreAssociative :: Bool
-semigroupsAreAssociative = (2 <> (3 <> 4) :: Sum Int) == ((2 <> 3) <> 4 :: Sum Int) -- Associative law
+--------------------------------------------------------------------------------
+-- Monoid
+
+{-
+Monoids are semigroups that have a special "neutral" value called `mempty` that
+obey identity laws:
+
+  class Monoid a where
+    mempty  :: a
+    mappend :: a -> a -> a  -- This is equivalent to (<>) in Semigroup
+
+Laws:
+* Left-Identity:             mempty `mappend` x === x
+* Right-identity:            x `mappend` mempty === x
+* Associativity:    x `mappend` (y `mappend` z) === (x `mappend` y) `mappend` z
+
+-}
+
+{-
+What do you think are the neutral values for the following monoids?
+-}
 
 unitHasMempty :: ()
-unitHasMempty = mempty :: ()
+unitHasMempty = mempty
+
+sumOverIntHasMempty :: Sum Int
+sumOverIntHasMempty = mempty
+
+productOverIntHasMempty :: Product Int
+productOverIntHasMempty = mempty
 
 sumHasMappend :: Sum Int
 sumHasMappend = 2 `mappend` 3
@@ -196,11 +237,117 @@ sumHasMappend = 2 `mappend` 3
 productHasMappend :: Product Int
 productHasMappend = 2 `mappend` 3
 
+sumHasMConcat :: Sum Int
+sumHasMConcat = mconcat [2, 3]
+
+productHasMConcat :: Product Int
+productHasMConcat = mconcat [2, 3]
+
 listHasMappend :: [Int]
 listHasMappend = [1, 2] `mappend` [3, 4]
 
 stringHasMappend :: String
 stringHasMappend = "Hello" `mappend` " " `mappend` "World"
+
+{-
+
+A phantom type is a type that an usued type argument.  It is typical used to carry type
+information around without incurring any runtime overhead.
+
+-}
+
+data Hint a = Hint
+
+class Arbitrary a where
+  arbitrary :: Monad m => Hint a -> Gen.Gen m a
+
+instance Arbitrary Int where
+  arbitrary _ = Gen.int Range.constantBounded
+
+instance Arbitrary (Sum Int) where
+  arbitrary _ = Sum <$> arbitrary (Hint :: Hint Int)
+
+instance Arbitrary (Product Int) where
+  arbitrary _ = Product <$> arbitrary (Hint :: Hint Int)
+
+propertyMonoidAssociativityOver :: (Arbitrary a, Monoid a, Eq a, Show a, Typeable a) => Hint a -> Property
+propertyMonoidAssociativityOver hint = property $ do
+  a :: a <- forAll (arbitrary hint)
+  b :: a <- forAll (arbitrary hint)
+  c :: a <- forAll (arbitrary hint)
+  ((a `mappend` b) `mappend` c) === (a `mappend` (b `mappend` c))
+
+propertyMonoidLeftIdentityOver :: (Arbitrary a, Monoid a, Eq a, Show a, Typeable a) => Hint a -> Property
+propertyMonoidLeftIdentityOver hint = property $ do
+  a :: a <- forAll (arbitrary hint)
+  (mempty `mappend` a) === a
+
+propertyMonoidRightIdentityOver :: (Arbitrary a, Monoid a, Eq a, Show a, Typeable a) => Hint a -> Property
+propertyMonoidRightIdentityOver hint = property $ do
+  a :: a <- forAll (arbitrary hint)
+  (a `mappend` mempty) === a
+
+{-
+
+check (propertyMonoidAssociativityOver (undefined :: Hint (Sum Int)))
+check (propertyMonoidAssociativityOver (undefined :: Hint (Product Int)))
+
+check (propertyMonoidLeftIdentityOver (undefined :: Hint (Sum Int)))
+check (propertyMonoidLeftIdentityOver (undefined :: Hint (Product Int)))
+
+check (propertyMonoidRightIdentityOver (undefined :: Hint (Sum Int)))
+check (propertyMonoidRightIdentityOver (undefined :: Hint (Product Int)))
+
+-}
+
+{-
+
+And to show this really works, here is a case that fails.
+
+-}
+
+instance Arbitrary (Minus Int) where
+  arbitrary _ = Minus <$> arbitrary (Hint :: Hint Int)
+
+instance Num a => Monoid (Minus a) where
+  mempty = Minus 0
+  Minus a `mappend` Minus b = Minus (a - b)
+
+{-
+
+check (propertyMonoidAssociativityOver (undefined :: Hint (Minus Int)))
+check (propertyMonoidLeftIdentityOver (undefined :: Hint (Minus Int)))
+check (propertyMonoidRightIdentityOver (undefined :: Hint (Minus Int)))
+
+-}
+
+data Average a = Average a Int deriving (Eq, Show)
+
+instance Fractional a => Monoid (Average a) where
+  mempty = Average 0 0
+  Average a i `mappend` Average b j = Average (a + b) (i + j)
+
+average :: Fractional a => a -> Average a
+average a = Average a 1
+
+evalAverage :: Fractional a => Average a -> Maybe a
+evalAverage (Average a i) = if i > 0 then Just (a / fromIntegral i) else Nothing
+
+averages :: Fractional a => [a] -> Average a
+averages as = mconcat $ average <$> as
+
+average1 :: Maybe Double
+average1 = evalAverage $ mconcat (average <$> [1, 2, 3, 4, 5, 6])
+
+average2 :: Maybe Double
+average2 = let
+    as = averages [1, 2, 3]
+    bs = averages [4, 5]
+    cs = averages [6]
+  in evalAverage $ mconcat [as, bs, cs]
+
+--------------------------------------------------------------------------------
+-- Functors
 
 addingTwoNumbers :: Int
 addingTwoNumbers = 1 + 2
