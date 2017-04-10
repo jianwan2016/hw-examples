@@ -47,6 +47,18 @@ incrementNumberWithFunctor = (+1) <$> Just 2
 incrementNumbersWithFunctor :: [Int]
 incrementNumbersWithFunctor = (+1) <$> [1, 2, 3]
 
+functionComposition1 :: Int
+functionComposition1 = let f = (+2) . (*3) in f 1
+
+functionComposition2 :: Int
+functionComposition2 = let f = (+2) . (*3) . (+4) in f 1
+
+functionAsAFunctor1 :: Int
+functionAsAFunctor1 = let f = (+2) <$> (*3) in f 1
+
+functionAsAFunctor2 :: Int
+functionAsAFunctor2 = let f = (+2) <$> (*3) <$> (+4) in f 1
+
 prependHiWithApplicative :: Maybe String
 prependHiWithApplicative = ("Hi " ++) <$> Just "Everyone"
 
@@ -79,3 +91,12 @@ addNumbersFromListWithApplicative5 = (+) <$> [1, 2, 3] <*> [10, 20, 30]
 
 appendTwoStringsWithApplicative :: Maybe String
 appendTwoStringsWithApplicative = (++) <$> Just "Hi " <*> Just "Everyone"
+
+functionAsAnApplicative1 :: Int
+functionAsAnApplicative1 = let f = (+) <$> (+3) <*> (+4) in f 1
+
+functionAsAnApplicative3 :: Int
+functionAsAnApplicative3 = let
+  g = (+) <$> (+3)
+  f = g <*> (+4)
+  in f 1
