@@ -1,7 +1,8 @@
-{-# LANGUAGE DeriveFunctor       #-}
-{-# LANGUAGE FlexibleInstances   #-}
-{-# LANGUAGE RankNTypes          #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 
 module TypeClass.Examples where
 
@@ -321,7 +322,44 @@ check (propertyMonoidRightIdentityOver (undefined :: Hint (Minus Int)))
 
 -}
 
+{-
+
+Average as a monoid
+
+-}
+
+instance Arbitrary Double where
+  arbitrary _ = Gen.double (Range.linearFrac (-1000) 1000)
+
+instance Arbitrary (Sum Double) where
+  arbitrary _ = Sum <$> Gen.double (Range.linearFrac (-1000) 1000)
+
+{-
+
+check (propertyMonoidAssociativityOver (undefined :: Hint (Sum Double)))
+check (propertyMonoidLeftIdentityOver  (undefined :: Hint (Sum Double)))
+check (propertyMonoidRightIdentityOver (undefined :: Hint (Sum Double)))
+
+-}
+
+instance Arbitrary Rational where
+  arbitrary _ = toRational <$> Gen.double (Range.linearFrac (-1000) 1000)
+
+instance Arbitrary (Sum Rational) where
+  arbitrary _ = Sum . toRational <$> Gen.double (Range.linearFrac (-1000) 1000)
+
+{-
+
+check (propertyMonoidAssociativityOver (undefined :: Hint (Sum Rational)))
+check (propertyMonoidLeftIdentityOver  (undefined :: Hint (Sum Rational)))
+check (propertyMonoidRightIdentityOver (undefined :: Hint (Sum Rational)))
+
+-}
+
 data Average a = Average a Int deriving (Eq, Show)
+
+instance Arbitrary a => Arbitrary (Average a) where
+  arbitrary _ = Average <$> arbitrary Hint <*> Gen.int (Range.linear 0 1000)
 
 instance Fractional a => Monoid (Average a) where
   mempty = Average 0 0
@@ -341,10 +379,26 @@ average1 = evalAverage $ mconcat (average <$> [1, 2, 3, 4, 5, 6])
 
 average2 :: Maybe Double
 average2 = let
-    as = averages [1, 2, 3]
-    bs = averages [4, 5]
-    cs = averages [6]
+    as = averages [1, 2, 3] :: Average Double
+    bs = averages [4, 5]    :: Average Double
+    cs = averages [6]       :: Average Double
   in evalAverage $ mconcat [as, bs, cs]
+
+{-
+
+check (propertyMonoidAssociativityOver (undefined :: Hint (Average Double)))
+check (propertyMonoidLeftIdentityOver  (undefined :: Hint (Average Double)))
+check (propertyMonoidRightIdentityOver (undefined :: Hint (Average Double)))
+
+-}
+
+{-
+
+check (propertyMonoidAssociativityOver (undefined :: Hint (Average Rational)))
+check (propertyMonoidLeftIdentityOver  (undefined :: Hint (Average Rational)))
+check (propertyMonoidRightIdentityOver (undefined :: Hint (Average Rational)))
+
+-}
 
 --------------------------------------------------------------------------------
 -- Functors

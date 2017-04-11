@@ -22,6 +22,7 @@ library
                       , conduit-combinators
                       , constraints
                       , hedgehog
+                      , scientific
   ghc-options:          -Wall
   default-language:     Haskell2010
 
