@@ -14,62 +14,6 @@ import qualified Hedgehog.Gen   as Gen
 import qualified Hedgehog.Range as Range
 
 --------------------------------------------------------------------------------
--- Data & Types
-
-{-
-
-True is a value:
-
-  λ> :t True
-  True :: Bool
-
-Bool is a type:
-
-  λ> :k Bool
-  Bool :: *
-
-We say Bool has two inhabitants:
-
-  λ> :info Bool
-  data Bool = False | True
-
-The type () has one inhabitant:
-
-  λ> :t ()
-  () :: ()
-
-The type Void has no inhabitants whatsoever:
-
-  λ> :t Void
-
-  <interactive>:1:1: error: Data constructor not in scope: Void
-
-Just is a constructor (like True):
-
-  λ> :t Just
-  Just :: a -> Maybe a
-
-Maybe is a type constructor taking one type argument:
-
-  λ> :k Maybe
-  Maybe :: * -> *
-
-Either is a type constructor taking two type arguments:
-
-  λ> :k Either
-  Either :: * -> * -> *
-
-Type application can be partially applied:
-
-  λ> :k Either String
-  Either String :: * -> *
-
-In other words, `Maybe` and `Either String` have the same kind
-This will be important later when we discuss functors.
-
--}
-
---------------------------------------------------------------------------------
 -- Semigroup
 
 {-
@@ -397,6 +341,62 @@ check (propertyMonoidRightIdentityOver (undefined :: Hint (Average Double)))
 check (propertyMonoidAssociativityOver (undefined :: Hint (Average Rational)))
 check (propertyMonoidLeftIdentityOver  (undefined :: Hint (Average Rational)))
 check (propertyMonoidRightIdentityOver (undefined :: Hint (Average Rational)))
+
+-}
+
+--------------------------------------------------------------------------------
+-- Data & Types
+
+{-
+
+True is a value:
+
+  λ> :t True
+  True :: Bool
+
+Bool is a type:
+
+  λ> :k Bool
+  Bool :: *
+
+We say Bool has two inhabitants:
+
+  λ> :info Bool
+  data Bool = False | True
+
+The type () has one inhabitant:
+
+  λ> :t ()
+  () :: ()
+
+The type Void has no inhabitants whatsoever:
+
+  λ> :t Void
+
+  <interactive>:1:1: error: Data constructor not in scope: Void
+
+Just is a constructor (like True):
+
+  λ> :t Just
+  Just :: a -> Maybe a
+
+Maybe is a type constructor taking one type argument:
+
+  λ> :k Maybe
+  Maybe :: * -> *
+
+Either is a type constructor taking two type arguments:
+
+  λ> :k Either
+  Either :: * -> * -> *
+
+Type application can be partially applied:
+
+  λ> :k Either String
+  Either String :: * -> *
+
+In other words, `Maybe` and `Either String` have the same kind
+This will be important later when we discuss functors.
 
 -}
 
