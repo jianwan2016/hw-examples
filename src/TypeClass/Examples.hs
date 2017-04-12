@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE RankNTypes                 #-}
@@ -435,14 +436,51 @@ instance Arbitrary a => Arbitrary (Maybe a) where
       then Just <$> arbitrary (Hint :: Hint a)
       else pure Nothing
 
+data Shown f = Shown String f
+
+instance Show (Shown f) where
+  show (Shown s _) = s
+
 propertyFunctorIdentity :: (Functor f, Show (f v), Typeable f, Typeable v, Eq (f v), Arbitrary (f v)) => Hint (f v) -> Property
 propertyFunctorIdentity hint = property $ do
   v <- forAll (arbitrary hint)
   fmap id v === v
 
+propertyFunctorFusion ::
+    ( Functor f, Typeable f, Typeable a
+    , Show (f a), Arbitrary (f a), Eq (f c), Show (f c)
+    , Typeable a, Typeable b, Typeable c
+    , Show (Shown (a -> b)), Arbitrary (Shown (a -> b))
+    , Show (Shown (b -> c)), Arbitrary (Shown (b -> c)))
+    => Hint (f a)
+    -> Hint (Shown (a -> b))
+    -> Hint (Shown (b -> c))
+    -> Property
+propertyFunctorFusion hintFv hintAb hintBc = property $ do
+  v <- forAll (arbitrary hintFv)
+  (Shown _ ab) <- forAll (arbitrary hintAb)
+  (Shown _ bc) <- forAll (arbitrary hintBc)
+  fmap (bc . ab) v === (fmap bc . fmap ab) v
+
+data IntToIntFunctions = IntToIntAdd | IntToIntMultiply deriving (Eq, Show, Enum, Bounded)
+
+instance Arbitrary (Shown (Int -> Int)) where
+  arbitrary _ = do
+    pick :: IntToIntFunctions <- Gen.enumBounded
+    case pick of
+      IntToIntAdd -> do
+        offset <- Gen.int (Range.linear (-10) 10)
+        let description = "(+ " <> show offset <> ")"
+        return $ Shown description (+ offset)
+      IntToIntMultiply ->do
+        offset <- Gen.int (Range.linear (-10) 10)
+        let description = "(* " <> show offset <> ")"
+        return $ Shown description (* offset)
+
 {-
 
 check (propertyFunctorIdentity  (Hint :: Hint (Maybe Int)))
+check (propertyFunctorFusion  (Hint :: Hint (Maybe Int)) (Hint :: Hint (Shown (Int -> Int))) (Hint :: Hint (Shown (Int -> Int))))
 
 -}
 
