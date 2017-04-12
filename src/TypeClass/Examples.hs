@@ -234,14 +234,14 @@ propertyMonoidRightIdentityOver hint = property $ do
 
 {-
 
-check (propertyMonoidAssociativityOver (undefined :: Hint (Sum Int)))
-check (propertyMonoidAssociativityOver (undefined :: Hint (Product Int)))
+check (propertyMonoidAssociativityOver (Hint :: Hint (Sum Int)))
+check (propertyMonoidAssociativityOver (Hint :: Hint (Product Int)))
 
-check (propertyMonoidLeftIdentityOver (undefined :: Hint (Sum Int)))
-check (propertyMonoidLeftIdentityOver (undefined :: Hint (Product Int)))
+check (propertyMonoidLeftIdentityOver (Hint :: Hint (Sum Int)))
+check (propertyMonoidLeftIdentityOver (Hint :: Hint (Product Int)))
 
-check (propertyMonoidRightIdentityOver (undefined :: Hint (Sum Int)))
-check (propertyMonoidRightIdentityOver (undefined :: Hint (Product Int)))
+check (propertyMonoidRightIdentityOver (Hint :: Hint (Sum Int)))
+check (propertyMonoidRightIdentityOver (Hint :: Hint (Product Int)))
 
 -}
 
@@ -260,9 +260,9 @@ instance Num a => Monoid (Minus a) where
 
 {-
 
-check (propertyMonoidAssociativityOver (undefined :: Hint (Minus Int)))
-check (propertyMonoidLeftIdentityOver (undefined :: Hint (Minus Int)))
-check (propertyMonoidRightIdentityOver (undefined :: Hint (Minus Int)))
+check (propertyMonoidAssociativityOver (Hint :: Hint (Minus Int)))
+check (propertyMonoidLeftIdentityOver (Hint :: Hint (Minus Int)))
+check (propertyMonoidRightIdentityOver (Hint :: Hint (Minus Int)))
 
 -}
 
@@ -280,9 +280,9 @@ instance Arbitrary (Sum Double) where
 
 {-
 
-check (propertyMonoidAssociativityOver (undefined :: Hint (Sum Double)))
-check (propertyMonoidLeftIdentityOver  (undefined :: Hint (Sum Double)))
-check (propertyMonoidRightIdentityOver (undefined :: Hint (Sum Double)))
+check (propertyMonoidAssociativityOver (Hint :: Hint (Sum Double)))
+check (propertyMonoidLeftIdentityOver  (Hint :: Hint (Sum Double)))
+check (propertyMonoidRightIdentityOver (Hint :: Hint (Sum Double)))
 
 -}
 
@@ -294,9 +294,9 @@ instance Arbitrary (Sum Rational) where
 
 {-
 
-check (propertyMonoidAssociativityOver (undefined :: Hint (Sum Rational)))
-check (propertyMonoidLeftIdentityOver  (undefined :: Hint (Sum Rational)))
-check (propertyMonoidRightIdentityOver (undefined :: Hint (Sum Rational)))
+check (propertyMonoidAssociativityOver (Hint :: Hint (Sum Rational)))
+check (propertyMonoidLeftIdentityOver  (Hint :: Hint (Sum Rational)))
+check (propertyMonoidRightIdentityOver (Hint :: Hint (Sum Rational)))
 
 -}
 
@@ -330,17 +330,17 @@ average2 = let
 
 {-
 
-check (propertyMonoidAssociativityOver (undefined :: Hint (Average Double)))
-check (propertyMonoidLeftIdentityOver  (undefined :: Hint (Average Double)))
-check (propertyMonoidRightIdentityOver (undefined :: Hint (Average Double)))
+check (propertyMonoidAssociativityOver (Hint :: Hint (Average Double)))
+check (propertyMonoidLeftIdentityOver  (Hint :: Hint (Average Double)))
+check (propertyMonoidRightIdentityOver (Hint :: Hint (Average Double)))
 
 -}
 
 {-
 
-check (propertyMonoidAssociativityOver (undefined :: Hint (Average Rational)))
-check (propertyMonoidLeftIdentityOver  (undefined :: Hint (Average Rational)))
-check (propertyMonoidRightIdentityOver (undefined :: Hint (Average Rational)))
+check (propertyMonoidAssociativityOver (Hint :: Hint (Average Rational)))
+check (propertyMonoidLeftIdentityOver  (Hint :: Hint (Average Rational)))
+check (propertyMonoidRightIdentityOver (Hint :: Hint (Average Rational)))
 
 -}
 
@@ -401,7 +401,7 @@ This will be important later when we discuss functors.
 -}
 
 --------------------------------------------------------------------------------
--- Functors
+-- Functor
 
 addingTwoNumbers :: Int
 addingTwoNumbers = 1 + 2
@@ -409,11 +409,42 @@ addingTwoNumbers = 1 + 2
 addingTwoNumbersCurried :: Int
 addingTwoNumbersCurried = (+) 1 2
 
+
+
 incrementNumberWithFunctor :: Maybe Int
 incrementNumberWithFunctor = (+1) <$> Just 2
 
 incrementNumbersWithFunctor :: [Int]
 incrementNumbersWithFunctor = (+1) <$> [1, 2, 3]
+
+{-
+Definition of Functor:
+
+  class Functor f where
+    fmap :: (a -> b) -> f a -> f b
+
+Laws:
+* Functor-identity:     fmap id x === id x
+* Fusion:            fmap (g . f) === fmap g . fmap f
+-}
+
+instance Arbitrary a => Arbitrary (Maybe a) where
+  arbitrary _ = do
+    value <- Gen.bool
+    if value
+      then Just <$> arbitrary (Hint :: Hint a)
+      else pure Nothing
+
+propertyFunctorIdentity :: (Functor f, Show (f v), Typeable f, Typeable v, Eq (f v), Arbitrary (f v)) => Hint (f v) -> Property
+propertyFunctorIdentity hint = property $ do
+  v <- forAll (arbitrary hint)
+  fmap id v === v
+
+{-
+
+check (propertyFunctorIdentity  (Hint :: Hint (Maybe Int)))
+
+-}
 
 -- Deriving Functor.  Why does this work?
 data Tree a = Leaf a | Node (Tree a) (Tree a)
@@ -437,6 +468,26 @@ simpleTree2 = Node2 (Node2 (Leaf2 1) (Leaf2 2)) (Leaf2 3)
 
 fmappedTree2 :: Tree2 Int
 fmappedTree2 = (+1) <$> simpleTree2
+
+{-
+Definition of Applicative:
+
+    class Functor f => Applicative f where
+      pure  :: a -> f a
+      (<*>) :: f (a -> b) -> f a -> f b
+
+Laws:
+* Identity:                  pure id <*> v === v
+* Homomorphism:          pure f <*> pure x === pure (f x)
+* Interchange:                u <*> pure y === pure ($ y) <*> u
+* Composition:  pure (.) <*> u <*> v <*> w === u <*> (v <*> w)
+
+-}
+
+propertyApplicativeIdentity :: (Applicative f, Show (f v), Typeable f, Typeable v, Eq (f v)) => Gen.Gen IO (f v) -> Property
+propertyApplicativeIdentity genV = property $ do
+  v <- forAll genV
+  (pure id <*> v) === v
 
 functionComposition1 :: Int
 functionComposition1 = let f = (+2) . (*3) in f 1
