@@ -7,12 +7,14 @@
 
 module TypeClass.Examples where
 
+import           Control.Concurrent
 import           Data.Semigroup
 
 import           Data.Typeable
 import           Hedgehog
-import qualified Hedgehog.Gen   as Gen
-import qualified Hedgehog.Range as Range
+import qualified Hedgehog.Gen       as Gen
+import qualified Hedgehog.Range     as Range
+import           System.IO.Unsafe
 
 --------------------------------------------------------------------------------
 -- Semigroup
@@ -484,6 +486,24 @@ check (propertyFunctorFusion  (Hint :: Hint (Maybe Int)) (Hint :: Hint (Shown (I
 
 -}
 
+fmapOnMaybe1 :: Maybe Int
+fmapOnMaybe1 = (+1) <$> (Just 1)
+
+fmapOnMaybe2 :: Maybe Int
+fmapOnMaybe2 = (+1) <$> Nothing
+
+fmapOnList :: [Int]
+fmapOnList = (+1) <$> [1, 2, 3]
+
+fmapOnEither1 :: Either Int Int
+fmapOnEither1 = (+1) <$> Right 1
+
+fmapOnEither2 :: Either Int Int
+fmapOnEither2 = (+1) <$> Left 1
+
+fmapOnTuple :: (Int, Int)
+fmapOnTuple = (+1) <$> (10, 20)
+
 -- Deriving Functor.  Why does this work?
 data Tree a = Leaf a | Node (Tree a) (Tree a)
   deriving (Show, Eq, Ord, Functor)
@@ -493,6 +513,17 @@ simpleTree = Node (Node (Leaf 1) (Leaf 2)) (Leaf 3)
 
 fmappedTree :: Tree Int
 fmappedTree = (+1) <$> simpleTree
+
+data V2 a = V2 a a deriving (Eq, Show {- , Functor -})
+
+instance Functor V2 where
+  f `fmap` (V2 a b) = V2 (f a) (f b)
+
+data E2 a = EL a | ER a deriving (Eq, Show {- , Functor -})
+
+instance Functor E2 where
+  f `fmap` (EL a) = EL (f a)
+  f `fmap` (ER a) = ER (f a)
 
 data Tree2 a = Leaf2 a | Node2 (Tree2 a) (Tree2 a)
   deriving (Show, Eq, Ord)
@@ -506,6 +537,172 @@ simpleTree2 = Node2 (Node2 (Leaf2 1) (Leaf2 2)) (Leaf2 3)
 
 fmappedTree2 :: Tree2 Int
 fmappedTree2 = (+1) <$> simpleTree2
+
+fmappedFunction :: Int
+fmappedFunction = ((+1) <$> (*2)) 4
+
+data Future a = Future (IO a) | Never
+
+hang :: forall a . IO a
+hang = do
+  varA :: MVar a <- newEmptyMVar
+  a <- readMVar varA
+  return a
+
+await :: Future a -> IO a
+await (Future io) = io
+await Never       = hang  -- block forever
+
+newFuture :: IO (Future a, a -> IO ())
+newFuture = do
+  v <- newEmptyMVar
+  return (Future (readMVar v), putMVar v)
+
+future :: IO a -> Future a
+future mka = unsafePerformIO $ do
+  (fut, sink) <- newFuture
+  _ <- forkIO $ mka >>= sink
+  return fut
+
+mkFutureDelay :: Int -> a -> Future a
+mkFutureDelay delay a = future $ do
+  putStrLn "Start"
+  threadDelay delay
+  putStrLn "Done"
+  return a
+
+{-
+
+let !f = mkFutureDelay 10000000 (10 :: Int)
+await f
+
+-}
+
+instance Functor Future where
+  fmap f (Future get) = future (fmap f get)
+  fmap _ Never        = Never
+
+{-
+
+let !f = mkFutureDelay 10000000 (10 :: Int)
+let !g = (+1) <$> f
+await g
+
+-}
+
+{-
+
+But Functor only allows you to map one value in a context.  It cannot be used to
+apply a function to two values in context.
+
+For thqt we need Applicative.
+
+-}
+
+{-
+
+Definition of Applicative:
+
+  class Functor f => Applicative f where
+    pure  :: a -> f a
+    (<*>) :: f (a -> b) -> f a -> f b
+
+Laws:
+* Identity:                  pure id <*> v === v
+* Homomorphism:          pure f <*> pure x === pure (f x)
+* Interchange:                u <*> pure y === pure ($ y) <*> u
+* Composition:  pure (.) <*> u <*> v <*> w === u <*> (v <*> w)
+
+-}
+
+maybeApplicativeA :: Maybe Int
+maybeApplicativeA = pure 2 -- Just 2
+
+maybeApplicativeB :: Maybe Int
+maybeApplicativeB = pure 3 -- Just 5
+
+maybeApplicativeC :: Maybe (Int -> Int)
+maybeApplicativeC = pure (+5) -- Just (+5)
+
+maybeApplicativeD :: Maybe Int
+maybeApplicativeD = pure (+5) <*> pure 2
+               -- = pure ((+5) 2)           -- Law of Homomorphism: pure f <*> pure x === pure (f x)
+               -- = pure 7                  -- Function application
+
+maybeApplicativeE :: Maybe Int
+maybeApplicativeE = (+) <$> maybeApplicativeA <*> maybeApplicativeB
+              --  = (+) <$> pure 2 <*> pure 3 -- Function application
+              --  = pure (+2) <*> pure 3      -- Apply fmap
+              --  = pure ((+2) 3)             -- Law of Homomorphism: pure f <*> pure x === pure (f x)
+              --  = pure 5                    -- Function application
+
+add3Numbers :: Int -> Int -> Int -> Int
+add3Numbers a b c = a + b + c
+
+{-
+
+add3Numbers 2 3 4
+add3Numbers <$> Just 2 <*> Just 3 <*> Just 4
+
+-}
+
+maybeApplicativeF :: Maybe Int
+maybeApplicativeF = (+) <$> Just 1 <*> Just 2
+
+maybeApplicativeG :: Maybe Int
+maybeApplicativeG = (+) <$> Nothing <*> Just 2
+
+maybeApplicativeH :: Maybe Int
+maybeApplicativeH = (+) <$> Just 1  <*> Nothing
+
+maybeApplicativeI :: Maybe Int
+maybeApplicativeI = (+) <$> Nothing  <*> Nothing
+
+listApplicativeA :: [Int]
+listApplicativeA = pure 1
+
+listApplicativeB :: [Int]
+listApplicativeB = (+) <$> [1] <*> [2]
+
+listApplicativeC :: [Int]
+listApplicativeC = (+) <$> [] <*> [2]
+
+listApplicativeD :: [Int]
+listApplicativeD = (+) <$> [1]  <*> []
+
+listApplicativeE :: [Int]
+listApplicativeE = (+) <$> []  <*> []
+
+listApplicativeF :: [Int]
+listApplicativeF = (+) <$> [1, 2]  <*> [10, 20]
+
+eitherApplicativeA :: Either String Int
+eitherApplicativeA = pure 1
+
+eitherApplicativeB :: Either String Int
+eitherApplicativeB = (+) <$> Right 1 <*> Right 2
+
+eitherApplicativeC :: Either String Int
+eitherApplicativeC = (+) <$> Left "Error 1" <*> Right 2
+
+eitherApplicativeD :: Either String Int
+eitherApplicativeD = (+) <$> Right 1  <*> Left "Error 2"
+
+eitherApplicativeE :: Either String Int
+eitherApplicativeE = (+) <$> Left "Error 1"  <*> Left "Error 2"
+
+
+-- instance Applicative Future where
+--   pure a                      = Future (pure a)
+--   Future getf <*> Future getx = future (getf <*> getx)
+--   _           <*> _           = Never
+
+-- instance Monad Future where
+--   return            = pure
+--   Future geta >>= h = future (geta >>= force . h)
+--   Never       >>= _ = Never
+
+
 
 {-
 Definition of Applicative:

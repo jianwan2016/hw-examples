@@ -1,6 +1,8 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
-module TypeClass.Declarations where
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
+
+module TypeClass.Declarations () where
 
 class Semigroup a where
   (<>) :: a -> a -> a
