@@ -348,6 +348,34 @@ check (propertyMonoidRightIdentityOver (Hint :: Hint (Average Rational)))
 -}
 
 --------------------------------------------------------------------------------
+-- Clock as a monoid
+
+newtype Hour = Hour Int deriving Eq
+
+unhour :: Hour -> Int
+unhour (Hour n) = ((n + 11) `mod` 12) + 1
+
+instance Monoid Hour where
+  mempty = Hour 12
+  mappend (Hour a) (Hour b) = Hour ((a + b) `mod` 12)
+
+instance Semigroup Hour
+
+instance Show Hour where
+  show h = show (unhour h) <> " O'Clock"
+
+instance Arbitrary Hour where
+  arbitrary _ = Hour <$> Gen.int (Range.linear 0 11)
+
+{-
+
+check (propertyMonoidAssociativityOver (Hint :: Hint Hour))
+check (propertyMonoidLeftIdentityOver  (Hint :: Hint Hour))
+check (propertyMonoidRightIdentityOver (Hint :: Hint Hour))
+
+-}
+
+--------------------------------------------------------------------------------
 -- Data & Types
 
 {-
